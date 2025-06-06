@@ -1,69 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NX+ Language - Wiki & Docs</title>
-<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-<link rel="stylesheet" href="style.css" />
-<script defer src="main.js"></script>
-<script defer src="version.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NX+ Language - Wiki & Docs</title>
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="main.js"></script>
+  <script defer src="version.js"></script>
 </head>
 <body>
-<header>
-  <h1>NX+ Language</h1>
-  <p>Created by NandoX (a teenager) on June 6, 2025</p>
-  <p>Intended to be basic and easy, mixing Lua with HTML</p>
-  <p><em>Some parts elaborated and styled by AI</em></p>
-</header>
+  <header>
+    <h1>NX+ Language</h1>
+    <p>Created by NandoX (a teenager) on June 6, 2025</p>
+    <p>Intended to be basic and easy, mixing Lua with HTML</p>
+    <p><em>Some parts elaborated and styled by AI</em></p>
+  </header>
 
-<nav>
-  <ul>
-    <li><a href="#home" class="nav-link active">Home</a></li>
-    <li><a href="#wiki" class="nav-link">Wiki</a></li>
-    <li><a href="#credits" class="nav-link">Credits</a></li>
-  </ul>
-</nav>
+  <nav>
+    <ul>
+      <li><a href="#home" class="nav-link active">Home</a></li>
+      <li><a href="#wiki" class="nav-link">Wiki</a></li>
+      <li><a href="#executor" class="nav-link">Executor</a></li>
+      <li><a href="#credits" class="nav-link">Credits</a></li>
+    </ul>
+  </nav>
 
-<main>
-  <section id="executor" class="page">
-  <h2>Try NX+ Code</h2>
-  <div class="terminal-ui">
-    <textarea id="nx-code-input" placeholder='Type your NX+ code here...&#10;P "Hello world!" /P'></textarea>
-    <button id="run-nx-btn">▶ Run</button>
-    <pre id="nx-output"></pre>
-  </div>
-</section>
+  <main>
+    <section id="home" class="page active">
+      <h2>Welcome to NX+</h2>
+      <p>NX+ is a beginner-friendly, easy-to-read scripting language inspired by Lua and HTML.</p>
+    </section>
 
-  <section id="wiki" class="page">
-    <h2>Wiki - Basic Commands</h2>
-    <table>
-      <thead>
-        <tr><th>Command</th><th>Description</th><th>Example</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>P "text" /P</td><td>Paragraph block</td><td>P "Hello, world!" /P</td></tr>
-        <tr><td>H "title" /H</td><td>Header block</td><td>H "Welcome" /H</td></tr>
-        <tr><td>F "content" /F</td><td>Generic container block</td><td>F "Content here" /F</td></tr>
-        <tr><td>LIST /LIST</td><td>Start and end a list</td><td>LIST<br>ITEM "Item 1" /ITEM<br>ITEM "Item 2" /ITEM<br>/LIST</td></tr>
-        <tr><td>BTN "text" /BTN</td><td>Button</td><td>BTN "Click me" /BTN</td></tr>
-        <tr><td>IMG "file.png"</td><td>Image (self-closing)</td><td>IMG "logo.png"</td></tr>
-      </tbody>
-    </table>
-  </section>
+    <section id="wiki" class="page">
+      <h2>Wiki - Basic Commands</h2>
+      <table>
+        <thead>
+          <tr><th>Command</th><th>Description</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>P "text" /P</td><td>Paragraph block</td><td>P "Hello, world!" /P</td></tr>
+          <tr><td>H "title" /H</td><td>Header block</td><td>H "Welcome" /H</td></tr>
+          <tr><td>F "content" /F</td><td>Generic container block</td><td>F "Content here" /F</td></tr>
+          <tr><td>LIST /LIST</td><td>Start and end a list</td><td>LIST<br>ITEM "Item 1" /ITEM<br>ITEM "Item 2" /ITEM<br>/LIST</td></tr>
+          <tr><td>BTN "text" /BTN</td><td>Button</td><td>BTN "Click me" /BTN</td></tr>
+          <tr><td>IMG "file.png"</td><td>Image (self-closing)</td><td>IMG "logo.png"</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <section id="credits" class="page">
-    <h2>Credits</h2>
-    <p>Created by: <strong>NandoX</strong> (teenager)</p>
-    <p>Date: June 6, 2025</p>
-    <p>Designed to be simple like Lua and HTML.</p>
-    <p>Some parts elaborated and styled by AI.</p>
-  </section>
-</main>
+    <section id="executor" class="page">
+      <h2>Try NX+ Code</h2>
+      <div class="terminal-ui">
+        <textarea id="nx-code-input" placeholder='Type your NX+ code here...&#10;P "Hello world!" /P'></textarea>
+        <button id="run-nx-btn">▶ Run</button>
+        <pre id="nx-output"></pre>
+      </div>
+    </section>
 
-<footer>
-  <p>NX+ Language © 2025 - All rights reserved</p>
-  <p id="version"></p>
-</footer>
+    <section id="credits" class="page">
+      <h2>Credits</h2>
+      <p>Created by: <strong>NandoX</strong> (teenager)</p>
+      <p>Date: June 6, 2025</p>
+      <p>Designed to be simple like Lua and HTML.</p>
+      <p>Some parts elaborated and styled by AI.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>NX+ Language © 2025 - All rights reserved</p>
+    <p id="version"></p>
+  </footer>
 </body>
-</html>
+  </html>
