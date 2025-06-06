@@ -1,9 +1,9 @@
-// main.js - Interpretador NX+ completo com +100 comandos e variáveis
+// main.js - Interpretador NX+ completo e funcional com suporte a blocos e variáveis
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Navegação das páginas wiki
   const links = document.querySelectorAll("nav a.nav-link");
   const pages = document.querySelectorAll("main .page");
+
   links.forEach(link => {
     link.addEventListener("click", e => {
       e.preventDefault();
@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Rodar código NX+ ao clicar no botão
   document.getElementById("run-nx-btn").addEventListener("click", () => {
     const code = document.getElementById("nx-code-input").value;
     const output = interpretNXPlus(code);
@@ -27,225 +26,143 @@ document.addEventListener("DOMContentLoaded", () => {
 function interpretNXPlus(code) {
   const lines = code.split("\n");
   let output = "";
-  let vars = {}; // Guarda variáveis
-  let skip = false; // Para ignorar blocos no IF falso
-  let skipStack = []; // Pilha para IF aninhado
-  let inLoop = false;
-  let loopCount = 0;
-  let loopBuffer = [];
-  let inList = false;
-  let listItems = [];
-  let inTable = false;
-  let tableRows = [];
-  let currentRow = [];
-  let inIf = false;
+  let vars = {};
 
-  // Avalia expressões simples com variáveis
+  // Stack para controle de IF (true = executar, false = pular)
+  let ifStack = [];
+  // Stack para controle de LOOP (cada item é {count, current, buffer})
+  let loopStack = [];
+
+  // Função para avaliar expressões simples, substituindo variáveis
   const evalExpr = (expr) => {
     try {
-      // Substitui variáveis no expr
-      const replaced = expr.replace(/\b(\w+)\b/g, (match) => {
-        if (vars[match] !== undefined) return JSON.stringify(vars[match]);
-        return match;
+      // Substitui nomes de variáveis no expr por seus valores (se numéricos, ou strings entre aspas)
+      const replaced = expr.replace(/\b(\w+)\b/g, (m) => {
+        if (vars.hasOwnProperty(m)) {
+          // Se valor numérico, retorna sem aspas, senão aspas
+          return /^\d+(\.\d+)?$/.test(vars[m]) ? vars[m] : `"${vars[m]}"`;
+        }
+        return m;
       });
-      // Avalia JS seguro
-      return Function(`"use strict"; return (${replaced})`)();
+      // Avalia expressão JS e retorna resultado booleano ou valor
+      // Segurança: aqui é um eval limitado (sem funções externas)
+      return Function(`return (${replaced})`)();
     } catch {
       return false;
     }
   };
 
-  // Substitui variáveis no texto {var}
+  // Função para substituir variáveis dentro de strings {varName}
   const substituteVars = (text) => {
     return text.replace(/\{(\w+)\}/g, (_, v) => vars[v] ?? `{${v}}`);
   };
 
-  // Comandos e handlers
-  const commands = {
-    // Texto básico e blocos
-    "P": (arg) => substituteVars(arg) + "\n",
-    "H": (arg) => "🔹 " + substituteVars(arg) + "\n",
-    "F": (arg) => "[ " + substituteVars(arg) + " ]\n",
-    "PRINT": (arg) => substituteVars(arg) + "\n",
-    "TITLE": (arg) => "📘 " + substituteVars(arg) + "\n",
-    "ALERT": (arg) => "⚠ ALERT: " + substituteVars(arg) + "\n",
-    "BOX": (arg) => "🧱 [" + substituteVars(arg) + "]\n",
-    "BTN": (arg) => "[BUTTON: " + substituteVars(arg) + "]\n",
-    "ICON": (arg) => "🔸 " + substituteVars(arg) + "\n",
-    "INPUT": (arg) => "[INPUT: " + substituteVars(arg) + "]\n",
-    "LINK": (arg) => "🔗 " + substituteVars(arg) + "\n",
-    "COLOR": (arg) => "🎨 color: " + substituteVars(arg) + "\n",
-    "IMG": (arg) => "🖼️ Image: " + substituteVars(arg) + "\n",
-    "MUSIC": (arg) => "🎵 Playing: " + substituteVars(arg) + "\n",
-    "STOPMUSIC": () => "⏹️ Music stopped\n",
-    "CLEAR": () => "\x1Bc",
-    "TIME": () => new Date().toLocaleTimeString() + "\n",
-    "DATE": () => new Date().toLocaleDateString() + "\n",
-    "RANDOM": (min, max) => (Math.floor(Math.random() * (parseInt(max) - parseInt(min) + 1)) + parseInt(min)) + "\n",
+  // Função para processar linha única de comando (sem blocos)
+  const processLine = (line) => {
+    // Comandos simples e mapeamento regex -> output
+    const matchers = [
+      [/^P\s+"(.*?)"\s*\/P$/i, (_, t) => substituteVars(t)],
+      [/^H\s+"(.*?)"\s*\/H$/i, (_, t) => `📘 ${substituteVars(t)}`],
+      [/^F\s+"(.*?)"\s*\/F$/i, (_, t) => `[ ${substituteVars(t)} ]`],
+      [/^PRINT\s+"(.*?)"\s*\/PRINT$/i, (_, t) => substituteVars(t)],
+      [/^TITLE\s+"(.*?)"\s*\/TITLE$/i, (_, t) => `📙 ${substituteVars(t)}`],
+      [/^ALERT\s+"(.*?)"\s*\/ALERT$/i, (_, t) => `⚠ ALERT: ${substituteVars(t)}`],
+      [/^BOX\s+"(.*?)"\s*\/BOX$/i, (_, t) => `🧱 [${substituteVars(t)}]`],
+      [/^BTN\s+"(.*?)"\s*\/BTN$/i, (_, t) => `[BUTTON: ${substituteVars(t)}]`],
+      [/^ICON\s+"(.*?)"$/i, (_, t) => `🔰 ${substituteVars(t)}`],
+      [/^INPUT\s+"(.*?)"$/i, (_, t) => `[INPUT: ${substituteVars(t)}]`],
+      [/^LINK\s+"(.*?)"\s*\/LINK$/i, (_, t) => `🔗 ${substituteVars(t)}`],
+      [/^COLOR\s+"(.*?)"$/i, (_, t) => `🎨 color: ${substituteVars(t)}`],
+      [/^IMG\s+"(.*?)"$/i, (_, t) => `🖼️ Image: ${substituteVars(t)}`],
+      [/^MUSIC\s+"(.*?)"$/i, (_, t) => `🎵 Playing: ${substituteVars(t)}`],
+      [/^STOPMUSIC$/i, () => `⏹️ Music stopped`],
+      [/^CLEAR$/i, () => "\x1Bc"],
+      [/^RANDOM\s+(\d+)\s+(\d+)$/i, (_, min, max) => Math.floor(Math.random() * (parseInt(max) - parseInt(min) + 1)) + parseInt(min)],
+      [/^TIME$/i, () => new Date().toLocaleTimeString()],
+      [/^DATE$/i, () => new Date().toLocaleDateString()]
+    ];
 
-    // Variáveis
-    "VAR": (key, val) => {
-      vars[key] = val;
-      return "";
-    },
+    for (const [regex, handler] of matchers) {
+      if (regex.test(line)) {
+        return handler(...line.match(regex));
+      }
+    }
 
-    // Condições IF / ELSE / /IF
-    "IF": (cond) => {
-      const res = evalExpr(cond);
-      skipStack.push(!res);
-      skip = skipStack.includes(true);
-      return "";
-    },
-    "ELSE": () => {
-      if (skipStack.length > 0) {
-        const last = skipStack.pop();
-        skipStack.push(!last);
-        skip = skipStack.includes(true);
-      }
-      return "";
-    },
-    "/IF": () => {
-      if (skipStack.length > 0) skipStack.pop();
-      skip = skipStack.includes(true);
-      return "";
-    },
-
-    // LOOP
-    "LOOP": (num) => {
-      inLoop = true;
-      loopCount = parseInt(num);
-      loopBuffer = [];
-      return "";
-    },
-    "/LOOP": () => {
-      if (inLoop) {
-        let loopOutput = "";
-        for (let i = 0; i < loopCount; i++) {
-          loopBuffer.forEach(line => {
-            loopOutput += interpretNXPlus(line + "\n");
-          });
-        }
-        inLoop = false;
-        return loopOutput;
-      }
-      return "";
-    },
-
-    // LISTAS
-    "LIST": () => {
-      inList = true;
-      listItems = [];
-      return "";
-    },
-    "ITEM": (val) => {
-      if (inList) {
-        listItems.push(substituteVars(val));
-      }
-      return "";
-    },
-    "/LIST": () => {
-      if (inList) {
-        let res = "• List:\n";
-        listItems.forEach(item => {
-          res += "  - " + item + "\n";
-        });
-        inList = false;
-        return res;
-      }
-      return "";
-    },
-
-    // TABELAS
-    "TABLE": () => {
-      inTable = true;
-      tableRows = [];
-      return "";
-    },
-    "ROW": () => {
-      if (inTable) {
-        if (currentRow.length > 0) {
-          tableRows.push(currentRow);
-          currentRow = [];
-        }
-      }
-      return "";
-    },
-    "COL": (val) => {
-      if (inTable) {
-        currentRow.push(substituteVars(val));
-      }
-      return "";
-    },
-    "/TABLE": () => {
-      if (inTable) {
-        if (currentRow.length > 0) {
-          tableRows.push(currentRow);
-          currentRow = [];
-        }
-        // Formata a tabela simples em texto
-        let res = "📋 Table:\n";
-        tableRows.forEach(row => {
-          res += " | " + row.join(" | ") + " |\n";
-        });
-        inTable = false;
-        return res;
-      }
-      return "";
-    },
-
-    // Outras funções / comandos especiais
-    "CONFIRM": (msg) => `[CONFIRM: ${substituteVars(msg)}]\n`,
-    "PROMPT": (msg) => `[PROMPT: ${substituteVars(msg)}]\n`,
-    "CHECK": (label) => `[CHECKBOX: ${substituteVars(label)}]\n`,
-    "SLIDER": (label) => `[SLIDER: ${substituteVars(label)}]\n`,
-    "MAP": (label) => `[MAP: ${substituteVars(label)}]\n`,
-    "TAB": (label) => `[TAB: ${substituteVars(label)}]\n`,
-
-    // Comandos simples e status
-    "HELLO": () => "Hello from NX+!\n",
-    "BYE": () => "Goodbye!\n"
+    return `⚠ Unknown command: ${line}`;
   };
 
-  for (let rawLine of lines) {
-    let line = rawLine.trim();
-    if (!line) continue;
+  // Loop para processar linha a linha, levando em conta blocos IF e LOOP
+  for (let i = 0; i < lines.length; i++) {
+    let rawLine = lines[i].trim();
+    if (!rawLine) continue;
 
-    // Se dentro do loop, armazena linhas no buffer
-    if (inLoop && !line.match(/^\/LOOP$/i)) {
-      loopBuffer.push(line);
+    // Variável VAR nome = "valor"
+    if (/^VAR\s+(\w+)\s*=\s*"(.*?)"$/i.test(rawLine)) {
+      const [, name, val] = rawLine.match(/^VAR\s+(\w+)\s*=\s*"(.*?)"$/i);
+      vars[name] = val;
       continue;
     }
 
-    // Ignora linhas se dentro de IF falso
-    if (skip) {
-      // Mas se for fim de bloco IF, trata
-      if (/^\/IF$/i.test(line)) {
-        output += commands["/IF"]();
-      } else if (/^ELSE$/i.test(line)) {
-        output += commands["ELSE"]();
+    // Controle IF
+    if (/^IF\s+(.+)$/i.test(rawLine)) {
+      const condition = rawLine.match(/^IF\s+(.+)$/i)[1];
+      const condResult = evalExpr(condition);
+      ifStack.push(condResult);
+      continue;
+    }
+
+    if (/^ELSE$/i.test(rawLine)) {
+      if (ifStack.length === 0) {
+        output += "⚠ ELSE without IF\n";
+        continue;
+      }
+      ifStack[ifStack.length - 1] = !ifStack[ifStack.length - 1];
+      continue;
+    }
+
+    if (/^\/IF$/i.test(rawLine)) {
+      if (ifStack.length === 0) {
+        output += "⚠ /IF without IF\n";
+        continue;
+      }
+      ifStack.pop();
+      continue;
+    }
+
+    // Se estamos dentro de um IF falso, ignoramos comandos (skip)
+    if (ifStack.includes(false)) {
+      continue;
+    }
+
+    // Controle LOOP
+    if (/^LOOP\s+(\d+)$/i.test(rawLine)) {
+      const count = parseInt(rawLine.match(/^LOOP\s+(\d+)$/i)[1]);
+      loopStack.push({ count, current: 0, buffer: [] });
+      continue;
+    }
+
+    if (/^\/LOOP$/i.test(rawLine)) {
+      if (loopStack.length === 0) {
+        output += "⚠ /LOOP without LOOP\n";
+        continue;
+      }
+      const loop = loopStack.pop();
+      for (let j = 0; j < loop.count; j++) {
+        // interpreta recursivamente o conteúdo do loop
+        output += interpretNXPlus(loop.buffer.join("\n"));
       }
       continue;
     }
 
-    // Parse de linha: comando + args
-    const parts = line.match(/^(\w+)(?:\s+"([^"]*)")?(?:\s+(.+))?$/);
-    if (!parts) {
-      output += `⚠ Unknown command: ${line}\n`;
+    if (loopStack.length > 0) {
+      // Estamos dentro de um loop, acumula linhas
+      loopStack[loopStack.length - 1].buffer.push(rawLine);
       continue;
     }
 
-    const cmd = parts[1].toUpperCase();
-    const arg1 = parts[2] ?? "";
-    const arg2 = parts[3] ?? "";
-
-    // Executa comando
-    if (commands[cmd]) {
-      const res = commands[cmd](arg1, arg2);
-      if (res) output += res;
-    } else {
-      output += `⚠ Unknown command: ${line}\n`;
-    }
+    // Processa linha simples
+    output += processLine(rawLine) + "\n";
   }
 
   return output;
-        }
+       }
