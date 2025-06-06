@@ -1,0 +1,16 @@
+=======================
+  NX+ - REQUIREMENTS
+=======================
+
+🧠 To run NX+ locally:
+
+- Python 3.10 or higher (recommended: Python 3.13.2)
+- Pygame 2.6.1 or higher (for games)
+- PIL (Pillow) for image handling
+- Modern Web Browser (for NX+ web version)
+
+🛠 Optional for Android users:
+- Pydroid 3
+- Termux (for terminal use)
+
+=======================

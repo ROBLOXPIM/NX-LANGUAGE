@@ -1,0 +1,19 @@
+NX app+
+
+H "About Me" /H
+
+P "Hello! My name is NandoX, and I created NX+ to make coding easy and fun for everyone!" /P
+
+F "Skills:" 
+  LIST
+    ITEM "Web Development" /ITEM
+    ITEM "Game Creation" /ITEM
+    ITEM "App Design" /ITEM
+  /LIST
+/F
+
+BTN "Click Here!" /BTN
+
+IMG "others/profile.png"
+
+P "This is just the beginning. With NX+, the possibilities are endless!" /P

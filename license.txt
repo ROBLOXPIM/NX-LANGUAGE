@@ -1,0 +1,15 @@
+NX+ Language - Open License (NX-CODE7)
+
+This project is open to public use, but all rights to the NX+ name, concept, and branding belong to NandoX.
+
+You are allowed to:
+- Use the language for educational and non-commercial projects.
+- Modify the language for personal use.
+- Share improvements, respecting the creator’s name.
+
+You are NOT allowed to:
+- Redistribute the language as your own.
+- Use NX+ branding for malicious purposes.
+- Sell the language or copies without permission.
+
+USE AT YOUR OWN RISK. The author is not responsible for any damage caused by using this language.

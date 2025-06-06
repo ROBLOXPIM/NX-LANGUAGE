@@ -1,0 +1,16 @@
+{
+  "name": "NX+ Language",
+  "short_name": "NX+",
+  "description": "An extremely simple and fun programming language by NandoX.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#6a0dad",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
