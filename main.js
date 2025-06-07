@@ -100,4 +100,116 @@ if (!matched) output += `⚠ Unknown command: ${line}\n`;
 
 return output; }
 
-  
+// main.js - Interpretador NX+ com suporte a UI interativa
+
+document.addEventListener("DOMContentLoaded", () => { const links = document.querySelectorAll("nav a.nav-link"); const pages = document.querySelectorAll("main .page");
+
+links.forEach(link => { link.addEventListener("click", e => { e.preventDefault(); links.forEach(l => l.classList.remove("active")); pages.forEach(p => p.classList.remove("active")); link.classList.add("active"); const target = link.getAttribute("href").substring(1); const page = document.getElementById(target); if (page) page.classList.add("active"); }); });
+
+document.getElementById("run-nx-btn").addEventListener("click", () => { const code = document.getElementById("nx-code-input").value; const uiRoot = document.getElementById("ui-root"); uiRoot.innerHTML = ""; const result = interpretNXPlus(code); if (typeof result === 'string') { document.getElementById("nx-output").textContent = result; } }); });
+
+function interpretNXPlus(code) { const lines = code.split("\n"); let output = ""; let vars = {}; let skip = false; let inLoop = false; let loopBuffer = []; let loopCount = 0; let inUI = false; const uiRoot = document.getElementById("ui-root");
+
+const evalExpr = (expr) => { try { const replaced = expr.replace(/\b(\w+)\b/g, (match) => vars[match] ?? match); return Function(return (${replaced}))(); } catch { return false; } };
+
+for (let rawLine of lines) { let line = rawLine.trim(); if (!line) continue;
+
+if (line === "NX+ UI Create") {
+  inUI = true;
+  uiRoot.innerHTML = "";
+  continue;
+}
+
+if (/^VAR\s+(\w+)\s*=\s*\"(.*?)\"$/.test(line)) {
+  const [, key, value] = line.match(/^VAR\s+(\w+)\s*=\s*\"(.*?)\"$/);
+  vars[key] = value;
+  continue;
+}
+
+if (/^IF\s+(.+)$/.test(line)) {
+  const condition = line.match(/^IF\s+(.+)$/)[1];
+  skip = !evalExpr(condition);
+  continue;
+}
+
+if (line === "ELSE") {
+  skip = !skip;
+  continue;
+}
+
+if (line === "END" || line === "/IF") {
+  skip = false;
+  continue;
+}
+
+if (skip) continue;
+
+if (/^LOOP\s+(\d+)$/.test(line)) {
+  loopCount = parseInt(line.match(/^LOOP\s+(\d+)$/)[1]);
+  inLoop = true;
+  loopBuffer = [];
+  continue;
+}
+
+if (line === "/LOOP" || line === "END") {
+  if (inLoop) {
+    for (let i = 0; i < loopCount; i++) {
+      loopBuffer.forEach(cmd => {
+        interpretNXPlus(cmd + "\n");
+      });
+    }
+    inLoop = false;
+    loopBuffer = [];
+  }
+  continue;
+}
+
+if (inLoop) {
+  loopBuffer.push(line);
+  continue;
+}
+
+const applyVars = (text) => text.replace(/\{(\w+)\}/g, (_, v) => vars[v] ?? `{${v}}`);
+
+const matchers = [
+  [/^P\s+\"(.*?)\"\s*\/P$/, (_, t) => applyVars(t)],
+  [/^H\d?\s+\"(.*?)\"\s*\/H\d?$/, (_, t) => `🔹 ${applyVars(t)}`],
+  [/^PRINT\s+\"(.*?)\"\s*\/PRINT$/, (_, t) => applyVars(t)],
+  [/^TITLE\s+\"(.*?)\"\s*\/TITLE$/, (_, t) => `📘 ${applyVars(t)}`],
+  [/^ALERT\s+\"(.*?)\"\s*\/ALERT$/, (_, t) => `⚠ ALERT: ${applyVars(t)}`],
+  [/^BR$/, () => `\n`],
+  [/^TIME$/, () => new Date().toLocaleTimeString()],
+  [/^DATE$/, () => new Date().toLocaleDateString()],
+];
+
+let matched = false;
+for (const [regex, handler] of matchers) {
+  if (regex.test(line)) {
+    const result = handler(...line.match(regex));
+    if (inUI) {
+      const p = document.createElement("p");
+      p.textContent = result;
+      uiRoot.appendChild(p);
+    } else {
+      output += result + "\n";
+    }
+    matched = true;
+    break;
+  }
+}
+
+if (!matched) {
+  if (inUI) {
+    const div = document.createElement("p");
+    div.textContent = `⚠ Unknown command: ${line}`;
+    uiRoot.appendChild(div);
+  } else {
+    output += `⚠ Unknown command: ${line}\n`;
+  }
+}
+
+}
+
+return output; }
+
+              
